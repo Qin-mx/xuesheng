@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<title>学生管理系统</title>
+</head>
+<style>
+*{
+	list-style: none;
+}
+.box{
+		width:600px;
+		margin:0 auto;
+		border:1px solid black;
+		text-align: center;
+		padding:0 50px;
+		box-sizing:border-box;
+	}
+.table{
+	width:500px;
+	margin:0 auto;
+	border-spacing: 0;
+
+}
+th{
+	border-bottom:1px solid black;
+	padding:15px 10px;
+	cursor:pointer;
+}
+td{
+  border-bottom: 1px solid black;
+  padding:10px 0;
+  width:20%;
+}
+.button{
+	display: inline-block;
+	padding:10px 30px;
+	color:white;
+	cursor: pointer;
+}
+.add{
+	background:red;
+}
+.remove{
+	background: #ccc;
+}
+.tbody input{
+	width:60%;
+	border:none;
+	outline:none;
+	border-bottom:1px solid black;
+}
+</style>
+<body>
+	<div class="box">
+		<h1>学生管理系统</h1>
+		<table class="table">
+			<thead>
+				<tr>
+					<th  data-id='id' flag="true">学号</th>
+					<th data-id='id' flag="true">姓名</th>
+					<th data-id='id' flag="true">年龄</th>
+					<th><input type="checkbox" class="tg-check"></th>
+				</tr>
+			</thead>
+			<tbody class="tbody">
+			</tbody>
+		</table>
+		<div>
+			<ul>
+				<li class="button add">添加</li>
+				<li class="button remove">删除</li>
+		    </ul>
+	</div>
+		
+	</div>
+</body>
+<script>
+//获取
+var 
+arr = [],
+forEach = arr.forEach,
+filter = arr.filter; 
+var thead = document.querySelector("thead");
+var tbody = document.querySelector(".tbody");
+var toggleCheck = document.querySelector('.tg-check');
+var add = document.querySelector(".add");
+var remove = document.querySelector(".remove");
+var students = (localStorage.students)?(JSON.parse(localStorage.students)):[];
+//添加事件
+add.addEventListener('click',function(){
+	 var xuehao = (students.length)?(students[students.length - 1].id + 1):1;
+	 var stu = {id:xuehao,name:"",age:""};
+	 students.push(stu);
+	 localStorage.students = JSON.stringify(students);
+	 var tr = document.createElement("tr");
+	 tr.setAttribute("data",stu.id)
+	 tr.innerHTML = '<td>'+stu.id+'</td><td active="name">'+stu.name+'</td><td active="age">'+stu.age+'</td><td><input type="checkbox" class="ck" value="'+stu.id+'"></td>';
+	 tbody.appendChild(tr);
+})
+// 把信息绘制出来
+function render(){
+	tbody.innerHTML="";
+	students.forEach(function(v){
+		var tr = document.createElement('tr');
+		tr.setAttribute("data",v.id)
+		tr.innerHTML = '<td>'+v.id+'</td><td active="name">'+v.name+'</td><td active="age">'+v.age+'</td><td><input type="checkbox" class="ck" value="'+v.id+'"></td>';
+		 tbody.appendChild( tr );
+	})
+}
+render();
+//删除数据
+function shanchu(xuehao){
+	var xuehao = Number(xuehao);
+	var arr=[];
+	students.forEach(function(v){	
+		if(v.id!==xuehao){
+			arr.push(v)
+		}
+	})
+	students=arr;
+	  localStorage.students = JSON.stringify(students);
+}
+remove.addEventListener('click',function(){
+	var els = tbody.querySelectorAll('.ck');
+	forEach.call(els,function(v){
+		if(v.checked){
+			tbody.removeChild(v.parentElement.parentElement)
+			shanchu(v.value)
+		}
+	})
+	toggleCheck.checked = false;
+  remove.style.background = "#ccc";
+})
+//全选or反选
+toggleCheck.addEventListener("click",function(){
+  var els = tbody.querySelectorAll('.ck');
+  var self = this;
+  forEach.call(els,function(v){
+    v.checked = self.checked;
+    if(self.checked){
+      remove.style.background = "#ff52ee";
+    }else{
+       remove.style.background = "#ccc";
+    }      
+  })
+})
+//事件
+var ckhandler=function(){
+  var els = tbody.querySelectorAll(".ck");
+  var j=0;
+  forEach.call(els,function(v){
+    if(v.checked){
+        j+=1;
+      }
+  })
+  if(j===0){
+    
+  }else{
+    remove.style.background = "#ff52ee";
+  }
+    toggleCheck.checked=(j===students.length );
+}
+tbody.addEventListener("click",function(e){
+  var el=e.target;
+  if(el.classList.contains("ck")){
+    ckhandler();
+  }
+  if(el.tagName==='TD'){
+    var le = tbody.querySelectorAll(".editing");
+     forEach.call(le,function(v){
+         bianji(v)
+      })
+    bianji(el.parentElement)
+  } 
+})    
+//可编辑
+function bianji(tr){
+	var els = tr.querySelectorAll('td[active]');
+	if(tr.classList.contains('editing')){
+		tr.classList.remove('editing');
+		forEach.call(els,function(v){
+			var tmp = v.querySelector('input').value;
+			v.innerHTML = tmp;
+		})
+	}else{
+		tr.classList.add('editing');
+		forEach.call(els,function(v){
+			var tmp =v.innerHTML;
+			v.innerHTML= '<input type="text" value="'+tmp+'">';
+		})
+	}
+}
+//保存到数据库中
+tbody.addEventListener('keyup',function(e){
+	var el = e.target;
+	var xuehao = el.parentElement.parentElement.getAttribute("data");
+	var k = el.parentElement.getAttribute("active");
+	var v =el.value;
+	baocun(xuehao,k,v)
+})
+function baocun(xuehao,k,value){
+	var xuehao = Number(xuehao);
+	students.forEach(function(v){
+		if(v.id === xuehao){
+			v[k] = value;
+		}
+		localStorage.setItem('students',JSON.stringify(students))
+	})
+}
+//排序
+var thead = document.querySelector("thead");
+thead.addEventListener('click',function(e){
+	var el=e.target;
+	if(el.nodeName==='TH'&&el.getAttribute('data-id')){
+		var sortKey=el.getAttribute('data-id');
+		var state = (el.getAttribute('flag')==='true')?true:false;toggleCheck.checked=false;
+	el.setAttribute('flag',!state);
+	students = students.sort(function(x,y){
+		return state?(x[sortKey]>y[sortKey]):(x[sortKey]<y[sortKey]);
+	})
+	render();
+	}	
+})
+</script>
+</html>
